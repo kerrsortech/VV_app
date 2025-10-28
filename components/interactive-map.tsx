@@ -100,13 +100,13 @@ export function InteractiveMap({ destinations, selectedId, onMarkerClick }: Inte
       className: "custom-marker",
       html: `
         <div class="relative flex flex-col items-center">
-          <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-8 bg-purple-500/20 rounded-full animate-ping"></div>
-          <div class="relative bg-purple-600 rounded-full p-2 border-2 border-white shadow-xl z-10">
+          <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-8 bg-[#6341F2]/20 rounded-full animate-ping"></div>
+          <div class="relative bg-[#6341F2] rounded-full p-2 border-2 border-white shadow-xl z-10">
             <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
           </div>
-          <div class="w-0.5 h-4 bg-purple-600 shadow-lg"></div>
+          <div class="w-0.5 h-4 bg-[#6341F2] shadow-lg"></div>
         </div>
       `,
       iconSize: [40, 56],
@@ -173,7 +173,7 @@ export function InteractiveMap({ destinations, selectedId, onMarkerClick }: Inte
       {!map && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10 rounded-xl">
           <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent mb-2"></div>
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#6341F2] border-r-transparent mb-2"></div>
             <p className="text-white/80 text-sm">Loading map...</p>
           </div>
         </div>

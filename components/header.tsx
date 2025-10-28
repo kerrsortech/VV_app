@@ -28,7 +28,7 @@ export function Header({ searchBar }: HeaderProps) {
       <div className="mx-auto flex h-16 items-center justify-between px-4 md:px-6 lg:px-8 gap-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <Sparkles className="h-5 w-5 text-purple-500" />
+          <Sparkles className="h-5 w-5 text-[#6341F2]" />
           <span className="text-lg font-semibold text-white">Virtual Voyage</span>
         </Link>
 
@@ -42,8 +42,8 @@ export function Header({ searchBar }: HeaderProps) {
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-full">
-                <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all">
+              <button className="focus:outline-none focus:ring-2 focus:ring-[#6341F2] rounded-full">
+                <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-[#6341F2] transition-all">
                   <AvatarImage src="/placeholder.svg?height=36&width=36" />
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>

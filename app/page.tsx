@@ -14,63 +14,47 @@ import { InteractiveMap } from "@/components/interactive-map"
 const Search = LucideIcons.Search
 const SlidersHorizontal = LucideIcons.SlidersHorizontal
 
-const destinations = [
-  {
-    id: "1",
-    name: "Yoga Nandeeshwara Swamy Kalyani",
-    location: "Karnataka",
-    category: "temples",
-    description: "Ancient temple with beautiful architecture",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MacBook%20Pro%2014_%20-%206-DdM2VdX7LE7fyBXsXEh7d1euBp8ZlU.png",
-    lat: 13.3733,
-    lng: 77.6833,
-  },
-  {
-    id: "2",
-    name: "Yoga Nandeeshwara Swamy Kalyani",
-    location: "Karnataka",
-    category: "temples",
-    description: "Historic temple complex",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MacBook%20Pro%2014_%20-%206-DdM2VdX7LE7fyBXsXEh7d1euBp8ZlU.png",
-    lat: 12.9716,
-    lng: 77.5946,
-  },
-  {
-    id: "3",
-    name: "Yoga Nandeeshwara Swamy Kalyani",
-    location: "Karnataka",
-    category: "monuments",
-    description: "Ancient monument with rich history",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MacBook%20Pro%2014_%20-%206-DdM2VdX7LE7fyBXsXEh7d1euBp8ZlU.png",
-    lat: 15.3647,
-    lng: 75.124,
-  },
-  {
-    id: "4",
-    name: "Yoga Nandeeshwara Swamy Kalyani",
-    location: "Karnataka",
-    category: "museums",
-    description: "Cultural museum showcasing heritage",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MacBook%20Pro%2014_%20-%206-DdM2VdX7LE7fyBXsXEh7d1euBp8ZlU.png",
-    lat: 14.4426,
-    lng: 76.0108,
-  },
-]
-
 export default function HomePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
-  const [filteredDestinations, setFilteredDestinations] = useState(destinations)
+  const [destinations, setDestinations] = useState<any[]>([])
+  const [filteredDestinations, setFilteredDestinations] = useState<any[]>([])
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" })
+    fetchProjects()
   }, [])
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch("/api/projects")
+      const data = await response.json()
+
+      // Transform API data to match component expectations
+      const transformedData = data.projects.map((project: any) => ({
+        id: project.id,
+        name: project.title,
+        location: project.location,
+        category: project.category,
+        description: project.description,
+        image: project.thumbnail_url,
+        lat: project.latitude,
+        lng: project.longitude,
+        rating: project.rating,
+        reviewCount: project.review_count,
+      }))
+
+      setDestinations(transformedData)
+      setFilteredDestinations(transformedData)
+    } catch (error) {
+      console.error("[v0] Error fetching projects:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSearch = () => {
     let filtered = destinations
@@ -117,11 +101,11 @@ export default function HomePage() {
         </SelectTrigger>
         <SelectContent className="bg-black/95 backdrop-blur-md border-white/20">
           <SelectItem value="all">All Types</SelectItem>
-          <SelectItem value="temples">Temples</SelectItem>
-          <SelectItem value="monuments">Monuments</SelectItem>
-          <SelectItem value="museums">Museums</SelectItem>
-          <SelectItem value="resorts">Resorts</SelectItem>
-          <SelectItem value="hotels">Hotels</SelectItem>
+          <SelectItem value="temple">Temples</SelectItem>
+          <SelectItem value="monument">Monuments</SelectItem>
+          <SelectItem value="museum">Museums</SelectItem>
+          <SelectItem value="resort">Resorts</SelectItem>
+          <SelectItem value="hotel">Hotels</SelectItem>
         </SelectContent>
       </Select>
       <Button
@@ -133,7 +117,7 @@ export default function HomePage() {
         <SlidersHorizontal className="h-4 w-4" />
       </Button>
       <Button
-        className="h-10 bg-purple-600 hover:bg-purple-700 text-white px-6 text-sm font-medium"
+        className="h-10 bg-[#6341F2] hover:bg-[#5835d9] text-white px-6 text-sm font-medium"
         onClick={handleSearch}
       >
         Search
@@ -208,7 +192,11 @@ export default function HomePage() {
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
-              {filteredDestinations.length > 0 ? (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center h-[300px] text-center bg-black/85 backdrop-blur-xl rounded-lg border border-white/20 shadow-2xl p-6">
+                  <p className="text-white/70 text-sm">Loading destinations...</p>
+                </div>
+              ) : filteredDestinations.length > 0 ? (
                 filteredDestinations.map((destination, index) => (
                   <div
                     key={destination.id}

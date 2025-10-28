@@ -5,21 +5,30 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import * as LucideIcons from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useToast } from "@/hooks/use-toast"
+import { upload } from "@vercel/blob/client"
 
 const ArrowLeft = LucideIcons.ArrowLeft
-const Upload = LucideIcons.Upload
 const MapPin = LucideIcons.MapPin
 const Tag = LucideIcons.Tag
 const FileText = LucideIcons.FileText
 const ImageIcon = LucideIcons.ImageIcon
 const Save = LucideIcons.Save
 const Sparkles = LucideIcons.Sparkles
+const Plus = LucideIcons.Plus
+const X = LucideIcons.X
+const Star = LucideIcons.Star
+const Users = LucideIcons.Users
+const ShoppingBag = LucideIcons.ShoppingBag
+const Upload = LucideIcons.Upload
+const Loader2 = LucideIcons.Loader2
 
 const categories = [
   "Temple",
@@ -35,6 +44,13 @@ const categories = [
 ]
 
 export default function AdminPage() {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
+  const [uploadingHero, setUploadingHero] = useState(false)
+  const [uploadingModel, setUploadingModel] = useState(false)
+
   const [formData, setFormData] = useState({
     title: "",
     location: "",
@@ -43,10 +59,20 @@ export default function AdminPage() {
     latitude: "",
     longitude: "",
     category: "",
+    rating: "4.5",
+    review_count: "0",
+    online_visitors: "0",
+    total_visitors: "0",
+    virtual_tours: "0",
+    thumbnail_url: "",
+    hero_image_url: "",
+    model_url: "",
   })
-  const [modelFile, setModelFile] = useState<File | null>(null)
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>("")
+
+  const [highlights, setHighlights] = useState<string[]>([""])
+  const [visitorTips, setVisitorTips] = useState<string[]>([""])
+  const [marketplaceLinks, setMarketplaceLinks] = useState<{ name: string; url: string }[]>([{ name: "", url: "" }])
+  const [badges, setBadges] = useState<string[]>([])
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" })
@@ -56,29 +82,185 @@ export default function AdminPage() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleModelFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setModelFile(e.target.files[0])
-    }
+  const addHighlight = () => setHighlights([...highlights, ""])
+  const removeHighlight = (index: number) => setHighlights(highlights.filter((_, i) => i !== index))
+  const updateHighlight = (index: number, value: string) => {
+    const newHighlights = [...highlights]
+    newHighlights[index] = value
+    setHighlights(newHighlights)
   }
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      setImageFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
+  const addVisitorTip = () => setVisitorTips([...visitorTips, ""])
+  const removeVisitorTip = (index: number) => setVisitorTips(visitorTips.filter((_, i) => i !== index))
+  const updateVisitorTip = (index: number, value: string) => {
+    const newTips = [...visitorTips]
+    newTips[index] = value
+    setVisitorTips(newTips)
+  }
+
+  const addMarketplaceLink = () => setMarketplaceLinks([...marketplaceLinks, { name: "", url: "" }])
+  const removeMarketplaceLink = (index: number) => setMarketplaceLinks(marketplaceLinks.filter((_, i) => i !== index))
+  const updateMarketplaceLink = (index: number, field: "name" | "url", value: string) => {
+    const newLinks = [...marketplaceLinks]
+    newLinks[index][field] = value
+    setMarketplaceLinks(newLinks)
+  }
+
+  const toggleBadge = (badge: string) => {
+    setBadges((prev) => (prev.includes(badge) ? prev.filter((b) => b !== badge) : [...prev, badge]))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Form submitted:", formData, modelFile, imageFile)
-    // TODO: Implement actual submission logic
-    alert("Project created successfully! (This is a demo)")
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          location: formData.location,
+          address: formData.address,
+          category: formData.category,
+          latitude: Number.parseFloat(formData.latitude),
+          longitude: Number.parseFloat(formData.longitude),
+          thumbnail_url: formData.thumbnail_url,
+          hero_image_url: formData.hero_image_url,
+          model_url: formData.model_url,
+          rating: Number.parseFloat(formData.rating),
+          review_count: Number.parseInt(formData.review_count),
+          online_visitors: Number.parseInt(formData.online_visitors),
+          total_visitors: Number.parseInt(formData.total_visitors),
+          virtual_tours: Number.parseInt(formData.virtual_tours),
+          highlights: highlights.filter((h) => h.trim() !== ""),
+          visitor_tips: visitorTips.filter((t) => t.trim() !== ""),
+          marketplace_links: marketplaceLinks.filter((l) => l.name && l.url),
+          badges: badges,
+          is_published: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create project")
+      }
+
+      const { project } = await response.json()
+
+      toast({
+        title: "Success!",
+        description: "Project created successfully",
+      })
+
+      router.push(`/destination/${project.id}`)
+    } catch (error) {
+      console.error("[v0] Error creating project:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create project. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingThumbnail(true)
+    try {
+      console.log("[v0] Uploading thumbnail:", file.name, file.size, "bytes")
+
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      })
+
+      console.log("[v0] Thumbnail uploaded:", blob.url)
+      handleInputChange("thumbnail_url", blob.url)
+      toast({
+        title: "Success",
+        description: "Thumbnail uploaded successfully",
+      })
+    } catch (error) {
+      console.error("[v0] Error uploading thumbnail:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to upload thumbnail",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingThumbnail(false)
+    }
+  }
+
+  const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingHero(true)
+    try {
+      console.log("[v0] Uploading hero image:", file.name, file.size, "bytes")
+
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      })
+
+      console.log("[v0] Hero image uploaded:", blob.url)
+      handleInputChange("hero_image_url", blob.url)
+      toast({
+        title: "Success",
+        description: "Hero image uploaded successfully",
+      })
+    } catch (error) {
+      console.error("[v0] Error uploading hero image:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to upload hero image",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingHero(false)
+    }
+  }
+
+  const handleModelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingModel(true)
+    try {
+      console.log("[v0] Uploading 3D model:", file.name, file.size, "bytes")
+
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+        multipart: file.size > 100 * 1024 * 1024, // Enable multipart for files >100MB
+      })
+
+      console.log("[v0] 3D model uploaded:", blob.url)
+      handleInputChange("model_url", blob.url)
+      toast({
+        title: "Success",
+        description: "3D model uploaded successfully",
+      })
+    } catch (error) {
+      console.error("[v0] Error uploading 3D model:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to upload 3D model",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingModel(false)
+    }
   }
 
   return (
@@ -111,173 +293,454 @@ export default function AdminPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Title */}
-              <div className="space-y-2">
-                <Label htmlFor="title" className="text-white flex items-center gap-2 text-sm">
-                  <FileText className="h-4 w-4 text-purple-500" />
-                  Project Title
-                </Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., Taj Mahal Virtual Tour"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
-                  required
-                />
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Basic Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Basic Information</h3>
 
-              {/* Location and Address Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Title */}
                 <div className="space-y-2">
-                  <Label htmlFor="location" className="text-white flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4 text-purple-500" />
-                    Location Name
+                  <Label htmlFor="title" className="text-white flex items-center gap-2 text-sm">
+                    <FileText className="h-4 w-4 text-purple-500" />
+                    Project Title
                   </Label>
                   <Input
-                    id="location"
-                    placeholder="e.g., Agra, India"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange("location", e.target.value)}
+                    id="title"
+                    placeholder="e.g., Taj Mahal Virtual Tour"
+                    value={formData.title}
+                    onChange={(e) => handleInputChange("title", e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
                     required
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address" className="text-white text-sm">
-                    Full Address
-                  </Label>
-                  <Input
-                    id="address"
-                    placeholder="Complete address"
-                    value={formData.address}
-                    onChange={(e) => handleInputChange("address", e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Coordinates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="latitude" className="text-white text-sm">
-                    Latitude
-                  </Label>
-                  <Input
-                    id="latitude"
-                    type="number"
-                    step="any"
-                    placeholder="e.g., 27.1751"
-                    value={formData.latitude}
-                    onChange={(e) => handleInputChange("latitude", e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="longitude" className="text-white text-sm">
-                    Longitude
-                  </Label>
-                  <Input
-                    id="longitude"
-                    type="number"
-                    step="any"
-                    placeholder="e.g., 78.0421"
-                    value={formData.longitude}
-                    onChange={(e) => handleInputChange("longitude", e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Category */}
-              <div className="space-y-2">
-                <Label htmlFor="category" className="text-white flex items-center gap-2 text-sm">
-                  <Tag className="h-4 w-4 text-purple-500" />
-                  Category
-                </Label>
-                <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
-                  <SelectTrigger className="bg-white/5 border-white/10 text-white h-10">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-black/95 backdrop-blur-md border-white/10">
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category.toLowerCase()} className="text-white">
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-white text-sm">
-                  Description
-                </Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe the location and what makes it special..."
-                  value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/40 min-h-[100px] resize-none"
-                  required
-                />
-              </div>
-
-              {/* File Uploads Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Thumbnail Image Upload */}
-                <div className="space-y-2">
-                  <Label htmlFor="image" className="text-white flex items-center gap-2 text-sm">
-                    <ImageIcon className="h-4 w-4 text-purple-500" />
-                    Thumbnail Image
-                  </Label>
-                  <div className="space-y-3">
+                {/* Location and Address Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="location" className="text-white flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-purple-500" />
+                      Location Name
+                    </Label>
                     <Input
-                      id="image"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageFileChange}
-                      className="bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-purple-600 file:text-white file:text-sm file:cursor-pointer hover:file:bg-purple-700"
+                      id="location"
+                      placeholder="e.g., Agra, India"
+                      value={formData.location}
+                      onChange={(e) => handleInputChange("location", e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
+                      required
                     />
-                    {imagePreview && (
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address" className="text-white text-sm">
+                      Full Address
+                    </Label>
+                    <Input
+                      id="address"
+                      placeholder="Complete address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange("address", e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Coordinates */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="latitude" className="text-white text-sm">
+                      Latitude
+                    </Label>
+                    <Input
+                      id="latitude"
+                      type="number"
+                      step="any"
+                      placeholder="e.g., 27.1751"
+                      value={formData.latitude}
+                      onChange={(e) => handleInputChange("latitude", e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="longitude" className="text-white text-sm">
+                      Longitude
+                    </Label>
+                    <Input
+                      id="longitude"
+                      type="number"
+                      step="any"
+                      placeholder="e.g., 78.0421"
+                      value={formData.longitude}
+                      onChange={(e) => handleInputChange("longitude", e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Category */}
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-white flex items-center gap-2 text-sm">
+                    <Tag className="h-4 w-4 text-purple-500" />
+                    Category
+                  </Label>
+                  <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white h-10">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black/95 backdrop-blur-md border-white/10">
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category.toLowerCase()} className="text-white">
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-white text-sm">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Describe the location and what makes it special..."
+                    value={formData.description}
+                    onChange={(e) => handleInputChange("description", e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/40 min-h-[100px] resize-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Statistics Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Statistics</h3>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rating" className="text-white flex items-center gap-2 text-sm">
+                      <Star className="h-4 w-4 text-purple-500" />
+                      Rating
+                    </Label>
+                    <Input
+                      id="rating"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="5"
+                      value={formData.rating}
+                      onChange={(e) => handleInputChange("rating", e.target.value)}
+                      className="bg-white/5 border-white/10 text-white h-10"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="review_count" className="text-white text-sm">
+                      Reviews
+                    </Label>
+                    <Input
+                      id="review_count"
+                      type="number"
+                      value={formData.review_count}
+                      onChange={(e) => handleInputChange("review_count", e.target.value)}
+                      className="bg-white/5 border-white/10 text-white h-10"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="online_visitors" className="text-white flex items-center gap-2 text-sm">
+                      <Users className="h-4 w-4 text-purple-500" />
+                      Online Visitors
+                    </Label>
+                    <Input
+                      id="online_visitors"
+                      type="number"
+                      value={formData.online_visitors}
+                      onChange={(e) => handleInputChange("online_visitors", e.target.value)}
+                      className="bg-white/5 border-white/10 text-white h-10"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="total_visitors" className="text-white text-sm">
+                      Total Visitors
+                    </Label>
+                    <Input
+                      id="total_visitors"
+                      type="number"
+                      value={formData.total_visitors}
+                      onChange={(e) => handleInputChange("total_visitors", e.target.value)}
+                      className="bg-white/5 border-white/10 text-white h-10"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="virtual_tours" className="text-white text-sm">
+                      Virtual Tours
+                    </Label>
+                    <Input
+                      id="virtual_tours"
+                      type="number"
+                      value={formData.virtual_tours}
+                      onChange={(e) => handleInputChange("virtual_tours", e.target.value)}
+                      className="bg-white/5 border-white/10 text-white h-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Highlights Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <h3 className="text-lg font-semibold text-white">Highlights</h3>
+                  <Button
+                    type="button"
+                    onClick={addHighlight}
+                    size="sm"
+                    variant="outline"
+                    className="border-white/10 text-white hover:bg-white/10 bg-transparent"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+
+                {highlights.map((highlight, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="e.g., Stunning architecture"
+                      value={highlight}
+                      onChange={(e) => updateHighlight(index, e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
+                    />
+                    {highlights.length > 1 && (
+                      <Button
+                        type="button"
+                        onClick={() => removeHighlight(index)}
+                        size="icon"
+                        variant="ghost"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Visitor Tips Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <h3 className="text-lg font-semibold text-white">Visitor Tips</h3>
+                  <Button
+                    type="button"
+                    onClick={addVisitorTip}
+                    size="sm"
+                    variant="outline"
+                    className="border-white/10 text-white hover:bg-white/10 bg-transparent"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+
+                {visitorTips.map((tip, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Textarea
+                      placeholder="e.g., Use headphones for immersive audio"
+                      value={tip}
+                      onChange={(e) => updateVisitorTip(index, e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40 min-h-[60px]"
+                    />
+                    {visitorTips.length > 1 && (
+                      <Button
+                        type="button"
+                        onClick={() => removeVisitorTip(index)}
+                        size="icon"
+                        variant="ghost"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Marketplace Links Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-purple-500" />
+                    Marketplace Links
+                  </h3>
+                  <Button
+                    type="button"
+                    onClick={addMarketplaceLink}
+                    size="sm"
+                    variant="outline"
+                    className="border-white/10 text-white hover:bg-white/10 bg-transparent"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+
+                {marketplaceLinks.map((link, index) => (
+                  <div key={index} className="flex gap-2">
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Shop name"
+                        value={link.name}
+                        onChange={(e) => updateMarketplaceLink(index, "name", e.target.value)}
+                        className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
+                      />
+                      <Input
+                        placeholder="https://..."
+                        value={link.url}
+                        onChange={(e) => updateMarketplaceLink(index, "url", e.target.value)}
+                        className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
+                      />
+                    </div>
+                    {marketplaceLinks.length > 1 && (
+                      <Button
+                        type="button"
+                        onClick={() => removeMarketplaceLink(index)}
+                        size="icon"
+                        variant="ghost"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Badges Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Badges</h3>
+                <div className="flex flex-wrap gap-2">
+                  {["Popular", "Trending", "New", "Featured", "Top Rated", "Hidden Gem"].map((badge) => (
+                    <Button
+                      key={badge}
+                      type="button"
+                      onClick={() => toggleBadge(badge)}
+                      size="sm"
+                      variant={badges.includes(badge) ? "default" : "outline"}
+                      className={
+                        badges.includes(badge)
+                          ? "bg-purple-600 hover:bg-purple-700 text-white"
+                          : "border-white/10 text-white hover:bg-white/10"
+                      }
+                    >
+                      {badge}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Media Files Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Media Files</h3>
+                <p className="text-sm text-white/60">Upload images and 3D models directly from your computer</p>
+
+                <div className="space-y-4">
+                  {/* Thumbnail Upload */}
+                  <div className="space-y-2">
+                    <Label htmlFor="thumbnail" className="text-white flex items-center gap-2 text-sm">
+                      <ImageIcon className="h-4 w-4 text-purple-500" />
+                      Thumbnail Image
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="thumbnail"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleThumbnailUpload}
+                        disabled={uploadingThumbnail}
+                        className="bg-white/5 border-white/10 text-white file:text-white/80 file:bg-white/10 file:border-0 file:mr-4 file:px-4 file:py-2 file:rounded-md hover:file:bg-white/20 h-10"
+                      />
+                      {uploadingThumbnail && (
+                        <Button size="icon" disabled className="bg-purple-600">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </Button>
+                      )}
+                    </div>
+                    {formData.thumbnail_url && (
                       <div className="rounded-lg overflow-hidden border border-white/10 aspect-video">
                         <img
-                          src={imagePreview || "/placeholder.svg"}
-                          alt="Preview"
+                          src={formData.thumbnail_url || "/placeholder.svg"}
+                          alt="Thumbnail preview"
                           className="w-full h-full object-cover"
                         />
                       </div>
                     )}
                   </div>
-                </div>
 
-                {/* 3D Model Upload */}
-                <div className="space-y-2">
-                  <Label htmlFor="model" className="text-white flex items-center gap-2 text-sm">
-                    <Upload className="h-4 w-4 text-purple-500" />
-                    3D Model File
-                  </Label>
-                  <div className="space-y-3">
-                    <Input
-                      id="model"
-                      type="file"
-                      accept=".ply,.splat,.ksplat"
-                      onChange={handleModelFileChange}
-                      className="bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-purple-600 file:text-white file:text-sm file:cursor-pointer hover:file:bg-purple-700"
-                    />
-                    {modelFile && (
-                      <div className="bg-white/5 border border-white/10 rounded-lg p-3">
-                        <p className="text-sm text-white/80 font-medium truncate">{modelFile.name}</p>
-                        <p className="text-xs text-white/50 mt-1">{(modelFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  {/* Hero Image Upload */}
+                  <div className="space-y-2">
+                    <Label htmlFor="hero" className="text-white flex items-center gap-2 text-sm">
+                      <ImageIcon className="h-4 w-4 text-purple-500" />
+                      Hero Image
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="hero"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleHeroUpload}
+                        disabled={uploadingHero}
+                        className="bg-white/5 border-white/10 text-white file:text-white/80 file:bg-white/10 file:border-0 file:mr-4 file:px-4 file:py-2 file:rounded-md hover:file:bg-white/20 h-10"
+                      />
+                      {uploadingHero && (
+                        <Button size="icon" disabled className="bg-purple-600">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </Button>
+                      )}
+                    </div>
+                    {formData.hero_image_url && (
+                      <div className="rounded-lg overflow-hidden border border-white/10 aspect-video">
+                        <img
+                          src={formData.hero_image_url || "/placeholder.svg"}
+                          alt="Hero preview"
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     )}
-                    <p className="text-xs text-white/40">Supported: .ply, .splat, .ksplat</p>
+                  </div>
+
+                  {/* 3D Model Upload */}
+                  <div className="space-y-2">
+                    <Label htmlFor="model" className="text-white flex items-center gap-2 text-sm">
+                      <Upload className="h-4 w-4 text-purple-500" />
+                      3D Model (.ply, .splat, .ksplat)
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="model"
+                        type="file"
+                        accept=".ply,.splat,.ksplat"
+                        onChange={handleModelUpload}
+                        disabled={uploadingModel}
+                        className="bg-white/5 border-white/10 text-white file:text-white/80 file:bg-white/10 file:border-0 file:mr-4 file:px-4 file:py-2 file:rounded-md hover:file:bg-white/20 h-10"
+                      />
+                      {uploadingModel && (
+                        <Button size="icon" disabled className="bg-purple-600">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </Button>
+                      )}
+                    </div>
+                    {formData.model_url && (
+                      <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                        <p className="text-sm text-white/80 font-medium truncate">{formData.model_url}</p>
+                        <p className="text-xs text-white/50 mt-1">3D Model file uploaded</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -296,10 +759,16 @@ export default function AdminPage() {
                 <Button
                   type="submit"
                   className="bg-purple-600 hover:bg-purple-700 text-white h-10"
-                  disabled={!formData.title || !formData.location || !modelFile}
+                  disabled={
+                    isSubmitting ||
+                    !formData.title ||
+                    !formData.location ||
+                    !formData.model_url ||
+                    !formData.thumbnail_url
+                  }
                 >
                   <Save className="mr-2 h-4 w-4" />
-                  Create Project
+                  {isSubmitting ? "Creating..." : "Create Project"}
                 </Button>
               </div>
             </form>

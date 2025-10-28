@@ -26,9 +26,9 @@ export function DestinationCard({
       className={cn(
         "group relative overflow-hidden rounded-lg transition-all duration-300",
         "bg-black/85 backdrop-blur-xl border border-white/20",
-        "hover:bg-black/90 hover:border-purple-500/40 hover:shadow-xl hover:shadow-purple-500/20",
+        "hover:bg-black/90 hover:border-[#6341F2]/40 hover:shadow-xl hover:shadow-[#6341F2]/20",
         "hover:-translate-y-0.5",
-        isSelected && "border-purple-500/60 ring-2 ring-purple-500/40 bg-black/90",
+        isSelected && "border-[#6341F2]/60 ring-2 ring-[#6341F2]/40 bg-black/90",
       )}
     >
       <div className="flex gap-3 p-2.5">
@@ -49,7 +49,7 @@ export function DestinationCard({
         {/* Content */}
         <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
           <div>
-            <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 mb-1 group-hover:text-purple-300 transition-colors">
+            <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 mb-1 group-hover:text-[#6341F2] transition-colors">
               {name}
             </h3>
             <div className="flex items-center gap-1 text-white/70 mb-1.5">
@@ -64,8 +64,8 @@ export function DestinationCard({
               <span className="text-[10px] font-medium">View in 3D</span>
             </div>
             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="h-6 w-6 rounded-full bg-purple-600/30 backdrop-blur-sm flex items-center justify-center border border-purple-500/30">
-                <LucideIcons.ArrowRight className="h-3 w-3 text-purple-300" />
+              <div className="h-6 w-6 rounded-full bg-[#6341F2]/30 backdrop-blur-sm flex items-center justify-center border border-[#6341F2]/30">
+                <LucideIcons.ArrowRight className="h-3 w-3 text-[#6341F2]" />
               </div>
             </div>
           </div>
