@@ -1,35 +1,48 @@
-import { getSupabaseClient } from "@/lib/supabase/db"
+import { sql, type Project } from "@/lib/neon/db"
 import { NextResponse } from "next/server"
 
 // GET all projects
 export async function GET(request: Request) {
   try {
-    console.log("[v0] Fetching projects from Supabase database...")
+    console.log("[v0] Fetching projects from Neon database...")
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
     const search = searchParams.get("search")
 
-    const supabase = await getSupabaseClient()
-
-    let query = supabase.from("projects").select("*").eq("is_published", true)
+    let projects: Project[]
 
     if (search) {
-      query = query.or(`title.ilike.%${search}%,location.ilike.%${search}%,description.ilike.%${search}%`)
+      // Search across title, location, and description
+      const searchPattern = `%${search}%`
+      projects = await sql`
+        SELECT * FROM projects 
+        WHERE is_published = true 
+        AND (
+          title ILIKE ${searchPattern} 
+          OR location ILIKE ${searchPattern} 
+          OR description ILIKE ${searchPattern}
+        )
+        ORDER BY created_at DESC
+      `
+    } else if (category && category !== "all") {
+      // Filter by category
+      projects = await sql`
+        SELECT * FROM projects 
+        WHERE is_published = true 
+        AND category = ${category}
+        ORDER BY created_at DESC
+      `
+    } else {
+      // Get all published projects
+      projects = await sql`
+        SELECT * FROM projects 
+        WHERE is_published = true 
+        ORDER BY created_at DESC
+      `
     }
 
-    if (category && category !== "all") {
-      query = query.eq("category", category)
-    }
-
-    const { data: projects, error } = await query.order("created_at", { ascending: false })
-
-    if (error) {
-      console.error("[v0] Supabase error:", error)
-      throw error
-    }
-
-    console.log(`[v0] Found ${projects?.length || 0} projects`)
-    return NextResponse.json({ projects: projects || [] })
+    console.log(`[v0] Found ${projects.length} projects`)
+    return NextResponse.json({ projects })
   } catch (error) {
     console.error("[v0] Error in GET /api/projects:", error)
     console.error("[v0] Error details:", {
@@ -51,41 +64,40 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const supabase = await getSupabaseClient()
 
-    const { data: project, error } = await supabase
-      .from("projects")
-      .insert({
-        title: body.title,
-        description: body.description,
-        location: body.location,
-        address: body.address || null,
-        category: body.category,
-        latitude: body.latitude,
-        longitude: body.longitude,
-        thumbnail_url: body.thumbnail_url || null,
-        hero_image_url: body.hero_image_url || null,
-        model_url: body.model_url || null,
-        rating: body.rating || 0,
-        review_count: body.review_count || 0,
-        online_visitors: body.online_visitors || 0,
-        total_visitors: body.total_visitors || 0,
-        virtual_tours: body.virtual_tours || 0,
-        highlights: body.highlights || [],
-        visitor_tips: body.visitor_tips || [],
-        marketplace_links: body.marketplace_links || [],
-        badges: body.badges || [],
-        is_published: body.is_published !== false,
-      })
-      .select()
-      .single()
+    const result = await sql`
+      INSERT INTO projects (
+        title, description, location, address, category,
+        latitude, longitude, thumbnail_url, hero_image_url, model_url,
+        rating, review_count, online_visitors, total_visitors, virtual_tours,
+        highlights, visitor_tips, marketplace_links, badges, is_published
+      ) VALUES (
+        ${body.title},
+        ${body.description},
+        ${body.location},
+        ${body.address || null},
+        ${body.category},
+        ${body.latitude},
+        ${body.longitude},
+        ${body.thumbnail_url || null},
+        ${body.hero_image_url || null},
+        ${body.model_url || null},
+        ${body.rating || 0},
+        ${body.review_count || 0},
+        ${body.online_visitors || 0},
+        ${body.total_visitors || 0},
+        ${body.virtual_tours || 0},
+        ${JSON.stringify(body.highlights || [])}::jsonb,
+        ${JSON.stringify(body.visitor_tips || [])}::jsonb,
+        ${JSON.stringify(body.marketplace_links || [])}::jsonb,
+        ${JSON.stringify(body.badges || [])}::jsonb,
+        ${body.is_published !== false}
+      )
+      RETURNING *
+    `
 
-    if (error) {
-      console.error("[v0] Supabase error:", error)
-      throw error
-    }
-
-    console.log("[v0] Created project:", project?.id)
+    const project = result[0]
+    console.log("[v0] Created project:", project.id)
     return NextResponse.json({ project }, { status: 201 })
   } catch (error) {
     console.error("[v0] Error in POST /api/projects:", error)
