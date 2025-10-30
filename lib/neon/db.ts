@@ -1,10 +1,9 @@
 import { neon } from "@neondatabase/serverless"
 
-// Use NEON_DATABASE_URL which is automatically provided by Neon integration
-const databaseUrl = process.env.DATABASE_URL || process.env.NEON_POSTGRES_URL
+const databaseUrl = process.env.NEON_POSTGRES_URL || process.env.NEON_NEON_DATABASE_URL
 
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL is not set. Please add your Neon database connection string to environment variables.")
+  throw new Error("NEON_POSTGRES_URL is not set. Please check your Neon integration in the Connect section.")
 }
 
 const sql = neon(databaseUrl)

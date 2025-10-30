@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     if (search) {
       const searchPattern = `%${search}%`
       projects = await sql`
-        SELECT * FROM projects 
+        SELECT * FROM public.projects 
         WHERE is_published = true 
         AND (
           title ILIKE ${searchPattern} OR 
@@ -25,13 +25,13 @@ export async function GET(request: Request) {
       `
     } else if (category && category !== "all") {
       projects = await sql`
-        SELECT * FROM projects 
+        SELECT * FROM public.projects 
         WHERE is_published = true AND category = ${category}
         ORDER BY created_at DESC
       `
     } else {
       projects = await sql`
-        SELECT * FROM projects 
+        SELECT * FROM public.projects 
         WHERE is_published = true
         ORDER BY created_at DESC
       `
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     // Insert new project into Neon database
     const result = await sql`
-      INSERT INTO projects (
+      INSERT INTO public.projects (
         title, description, location, address, category,
         latitude, longitude, thumbnail_url, hero_image_url, model_url,
         rating, review_count, online_visitors, total_visitors, virtual_tours,
