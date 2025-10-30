@@ -1,25 +1,38 @@
-import { neon } from "@neondatabase/serverless"
+import { neon, type NeonQueryFunction } from "@neondatabase/serverless"
 
-const databaseUrl =
-  process.env.NEON_NEON_DATABASE_URL || process.env.NEON_POSTGRES_URL || process.env.NEON_NEON_DATABASE_URL
+let _sql: NeonQueryFunction<false, false> | null = null
 
-if (!databaseUrl) {
-  console.error("[v0] Available Neon env vars:", {
-    NEON_DATABASE_URL: !!process.env.NEON_DATABASE_URL,
-    NEON_POSTGRES_URL: !!process.env.NEON_POSTGRES_URL,
-    NEON_POSTGRES_PRISMA_URL: !!process.env.NEON_POSTGRES_PRISMA_URL,
-  })
-  throw new Error(
-    "Neon database URL is not set. Please check your Neon integration in the Connect section. " +
-      "Expected NEON_DATABASE_URL or NEON_POSTGRES_URL environment variable.",
-  )
+function getSql(): NeonQueryFunction<false, false> {
+  if (_sql) return _sql
+
+  const databaseUrl =
+    process.env.NEON_NEON_DATABASE_URL ||
+    process.env.NEON_POSTGRES_URL ||
+    process.env.DATABASE_URL ||
+    process.env.NEON_POSTGRES_PRISMA_URL
+
+  if (!databaseUrl) {
+    const availableVars = {
+      NEON_DATABASE_URL: !!process.env.NEON_DATABASE_URL,
+      NEON_POSTGRES_URL: !!process.env.NEON_POSTGRES_URL,
+      NEON_POSTGRES_PRISMA_URL: !!process.env.NEON_POSTGRES_PRISMA_URL,
+      DATABASE_URL: !!process.env.DATABASE_URL,
+    }
+    console.error("[v0] No Neon database URL found. Available env vars:", availableVars)
+    throw new Error(
+      "Neon database URL is not configured. Please add NEON_DATABASE_URL or NEON_POSTGRES_URL in the Vars section of the sidebar.",
+    )
+  }
+
+  console.log("[v0] Initializing Neon connection with URL:", databaseUrl.substring(0, 30) + "...")
+  _sql = neon(databaseUrl)
+  return _sql
 }
 
-console.log("[v0] Connecting to Neon database:", databaseUrl.substring(0, 30) + "...")
-
-const sql = neon(databaseUrl)
-
-export { sql }
+export function sql(strings: TemplateStringsArray, ...values: any[]) {
+  const sqlInstance = getSql()
+  return sqlInstance(strings, ...values)
+}
 
 // Type definitions for the projects table
 export interface Project {

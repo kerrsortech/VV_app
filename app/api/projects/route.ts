@@ -9,6 +9,19 @@ export async function GET(request: Request) {
     const category = searchParams.get("category")
     const search = searchParams.get("search")
 
+    try {
+      const tableCheck = await sql`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'projects'
+        ) as table_exists
+      `
+      console.log("[v0] Table exists check:", tableCheck[0])
+    } catch (checkError) {
+      console.error("[v0] Error checking table existence:", checkError)
+    }
+
     let projects: Project[]
 
     if (search) {

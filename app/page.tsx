@@ -31,6 +31,13 @@ export default function HomePage() {
   const fetchProjects = async () => {
     try {
       const response = await fetch("/api/projects")
+
+      if (!response.ok) {
+        const text = await response.text()
+        console.error("[v0] API error response:", text)
+        throw new Error(`Failed to fetch projects: ${response.status} ${response.statusText}`)
+      }
+
       const data = await response.json()
 
       // Transform API data to match component expectations
@@ -51,6 +58,8 @@ export default function HomePage() {
       setFilteredDestinations(transformedData)
     } catch (error) {
       console.error("[v0] Error fetching projects:", error)
+      setDestinations([])
+      setFilteredDestinations([])
     } finally {
       setIsLoading(false)
     }
