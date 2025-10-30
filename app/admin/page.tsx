@@ -340,7 +340,7 @@ export default function AdminPage() {
                       placeholder="Complete address"
                       value={formData.address}
                       onChange={(e) => handleInputChange("address", e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
+                      className="bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/40 min-h-[100px] resize-none"
                       required
                     />
                   </div>
@@ -649,98 +649,167 @@ export default function AdminPage() {
                 <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Media Files</h3>
                 <p className="text-sm text-white/60">Upload images and 3D models directly from your computer</p>
 
-                <div className="space-y-4">
-                  {/* Thumbnail Upload */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Thumbnail Upload Card */}
                   <div className="space-y-2">
-                    <Label htmlFor="thumbnail" className="text-white flex items-center gap-2 text-sm">
-                      <ImageIcon className="h-4 w-4 text-purple-500" />
+                    <Label className="text-white flex items-center gap-2 text-sm">
+                      <ImageIcon className="h-4 w-4 text-[#6341F2]" />
                       Thumbnail Image
                     </Label>
-                    <div className="flex gap-2">
-                      <Input
+                    <div
+                      onClick={() => document.getElementById("thumbnail")?.click()}
+                      className={`relative aspect-video rounded-lg border-2 border-dashed transition-all cursor-pointer overflow-hidden ${
+                        formData.thumbnail_url
+                          ? "border-[#6341F2]/50 bg-[#6341F2]/5"
+                          : "border-white/20 bg-white/5 hover:border-[#6341F2]/50 hover:bg-white/10"
+                      }`}
+                    >
+                      {uploadingThumbnail ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="h-8 w-8 animate-spin text-[#6341F2]" />
+                          <p className="text-sm text-white/60">Uploading...</p>
+                        </div>
+                      ) : formData.thumbnail_url ? (
+                        <>
+                          <img
+                            src={formData.thumbnail_url || "/placeholder.svg"}
+                            alt="Thumbnail preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="text-center">
+                              <Upload className="h-6 w-6 text-white mx-auto mb-2" />
+                              <p className="text-sm text-white font-medium">Click to change</p>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                          <div className="p-3 rounded-full bg-white/5 border border-white/10">
+                            <ImageIcon className="h-6 w-6 text-white/60" />
+                          </div>
+                          <p className="text-sm text-white/80 font-medium">Click to upload</p>
+                          <p className="text-xs text-white/50">PNG, JPG, WEBP</p>
+                        </div>
+                      )}
+                      <input
                         id="thumbnail"
                         type="file"
                         accept="image/*"
                         onChange={handleThumbnailUpload}
                         disabled={uploadingThumbnail}
-                        className="bg-white/5 border-white/10 text-white file:text-white/80 file:bg-white/10 file:border-0 file:mr-4 file:px-4 file:py-2 file:rounded-md hover:file:bg-white/20 h-10"
+                        className="hidden"
                       />
-                      {uploadingThumbnail && (
-                        <Button size="icon" disabled className="bg-purple-600">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </Button>
-                      )}
                     </div>
-                    {formData.thumbnail_url && (
-                      <div className="rounded-lg overflow-hidden border border-white/10 aspect-video">
-                        <img
-                          src={formData.thumbnail_url || "/placeholder.svg"}
-                          alt="Thumbnail preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
                   </div>
 
-                  {/* Hero Image Upload */}
+                  {/* Hero Image Upload Card */}
                   <div className="space-y-2">
-                    <Label htmlFor="hero" className="text-white flex items-center gap-2 text-sm">
-                      <ImageIcon className="h-4 w-4 text-purple-500" />
+                    <Label className="text-white flex items-center gap-2 text-sm">
+                      <ImageIcon className="h-4 w-4 text-[#6341F2]" />
                       Hero Image
                     </Label>
-                    <div className="flex gap-2">
-                      <Input
+                    <div
+                      onClick={() => document.getElementById("hero")?.click()}
+                      className={`relative aspect-video rounded-lg border-2 border-dashed transition-all cursor-pointer overflow-hidden ${
+                        formData.hero_image_url
+                          ? "border-[#6341F2]/50 bg-[#6341F2]/5"
+                          : "border-white/20 bg-white/5 hover:border-[#6341F2]/50 hover:bg-white/10"
+                      }`}
+                    >
+                      {uploadingHero ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="h-8 w-8 animate-spin text-[#6341F2]" />
+                          <p className="text-sm text-white/60">Uploading...</p>
+                        </div>
+                      ) : formData.hero_image_url ? (
+                        <>
+                          <img
+                            src={formData.hero_image_url || "/placeholder.svg"}
+                            alt="Hero preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="text-center">
+                              <Upload className="h-6 w-6 text-white mx-auto mb-2" />
+                              <p className="text-sm text-white font-medium">Click to change</p>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                          <div className="p-3 rounded-full bg-white/5 border border-white/10">
+                            <ImageIcon className="h-6 w-6 text-white/60" />
+                          </div>
+                          <p className="text-sm text-white/80 font-medium">Click to upload</p>
+                          <p className="text-xs text-white/50">PNG, JPG, WEBP</p>
+                        </div>
+                      )}
+                      <input
                         id="hero"
                         type="file"
                         accept="image/*"
                         onChange={handleHeroUpload}
                         disabled={uploadingHero}
-                        className="bg-white/5 border-white/10 text-white file:text-white/80 file:bg-white/10 file:border-0 file:mr-4 file:px-4 file:py-2 file:rounded-md hover:file:bg-white/20 h-10"
+                        className="hidden"
                       />
-                      {uploadingHero && (
-                        <Button size="icon" disabled className="bg-purple-600">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </Button>
-                      )}
                     </div>
-                    {formData.hero_image_url && (
-                      <div className="rounded-lg overflow-hidden border border-white/10 aspect-video">
-                        <img
-                          src={formData.hero_image_url || "/placeholder.svg"}
-                          alt="Hero preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
                   </div>
 
-                  {/* 3D Model Upload */}
-                  <div className="space-y-2">
-                    <Label htmlFor="model" className="text-white flex items-center gap-2 text-sm">
-                      <Upload className="h-4 w-4 text-purple-500" />
+                  {/* 3D Model Upload Card - Full Width */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-white flex items-center gap-2 text-sm">
+                      <Upload className="h-4 w-4 text-[#6341F2]" />
                       3D Model (.ply, .splat, .ksplat)
                     </Label>
-                    <div className="flex gap-2">
-                      <Input
+                    <div
+                      onClick={() => document.getElementById("model")?.click()}
+                      className={`relative h-32 rounded-lg border-2 border-dashed transition-all cursor-pointer overflow-hidden ${
+                        formData.model_url
+                          ? "border-[#6341F2]/50 bg-[#6341F2]/5"
+                          : "border-white/20 bg-white/5 hover:border-[#6341F2]/50 hover:bg-white/10"
+                      }`}
+                    >
+                      {uploadingModel ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="h-8 w-8 animate-spin text-[#6341F2]" />
+                          <p className="text-sm text-white/60">Uploading 3D model...</p>
+                          <p className="text-xs text-white/40">This may take a while for large files</p>
+                        </div>
+                      ) : formData.model_url ? (
+                        <div className="absolute inset-0 flex items-center justify-between px-6 bg-gradient-to-r from-[#6341F2]/10 to-transparent">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-lg bg-[#6341F2]/20 border border-[#6341F2]/30">
+                              <Upload className="h-6 w-6 text-[#6341F2]" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-white/90 font-medium">3D Model Uploaded</p>
+                              <p className="text-xs text-white/50 mt-1 max-w-md truncate">{formData.model_url}</p>
+                            </div>
+                          </div>
+                          <div className="text-center opacity-0 hover:opacity-100 transition-opacity">
+                            <Upload className="h-5 w-5 text-white/60 mx-auto mb-1" />
+                            <p className="text-xs text-white/60">Click to change</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                          <div className="p-3 rounded-full bg-white/5 border border-white/10">
+                            <Upload className="h-6 w-6 text-white/60" />
+                          </div>
+                          <p className="text-sm text-white/80 font-medium">Click to upload 3D model</p>
+                          <p className="text-xs text-white/50">.PLY, .SPLAT, .KSPLAT files supported</p>
+                        </div>
+                      )}
+                      <input
                         id="model"
                         type="file"
                         accept=".ply,.splat,.ksplat"
                         onChange={handleModelUpload}
                         disabled={uploadingModel}
-                        className="bg-white/5 border-white/10 text-white file:text-white/80 file:bg-white/10 file:border-0 file:mr-4 file:px-4 file:py-2 file:rounded-md hover:file:bg-white/20 h-10"
+                        className="hidden"
                       />
-                      {uploadingModel && (
-                        <Button size="icon" disabled className="bg-purple-600">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </Button>
-                      )}
                     </div>
-                    {formData.model_url && (
-                      <div className="bg-white/5 border border-white/10 rounded-lg p-3">
-                        <p className="text-sm text-white/80 font-medium truncate">{formData.model_url}</p>
-                        <p className="text-xs text-white/50 mt-1">3D Model file uploaded</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
