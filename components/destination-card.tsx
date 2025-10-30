@@ -39,11 +39,6 @@ export function DestinationCard({
             alt={name}
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
           />
-          {category && (
-            <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/80 backdrop-blur-sm rounded text-[9px] font-medium text-white uppercase tracking-wide border border-white/20">
-              {category}
-            </div>
-          )}
         </div>
 
         {/* Content */}
@@ -52,9 +47,16 @@ export function DestinationCard({
             <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 mb-1 group-hover:text-[#6341F2] transition-colors">
               {name}
             </h3>
-            <div className="flex items-center gap-1 text-white/70 mb-1.5">
-              <MapPin className="h-3 w-3 flex-shrink-0" />
-              <p className="text-xs truncate">{location}</p>
+            <div className="flex items-center gap-1.5 text-white/70 mb-1.5 flex-wrap">
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3 w-3 flex-shrink-0" />
+                <p className="text-xs truncate">{location}</p>
+              </div>
+              {category && (
+                <span className="px-2 py-0.5 bg-[#6341F2]/20 backdrop-blur-sm rounded-full text-[10px] font-medium text-[#6341F2] uppercase tracking-wide border border-[#6341F2]/30">
+                  {category}
+                </span>
+              )}
             </div>
           </div>
 
