@@ -43,27 +43,25 @@ export function DestinationCard({
 
         {/* Content */}
         <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-          <div>
-            <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 mb-1 group-hover:text-[#6341F2] transition-colors">
+          <div className="space-y-1">
+            {category && (
+              <span className="inline-block px-2 py-0.5 bg-white/10 backdrop-blur-sm rounded-full text-[10px] font-medium text-white/90 uppercase tracking-wide border border-white/20">
+                {category}
+              </span>
+            )}
+            <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 group-hover:text-[#6341F2] transition-colors">
               {name}
             </h3>
-            <div className="flex items-center gap-1.5 text-white/70 mb-1.5 flex-wrap">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-3 w-3 flex-shrink-0" />
-                <p className="text-xs truncate">{location}</p>
-              </div>
-              {category && (
-                <span className="px-2 py-0.5 bg-[#6341F2]/20 backdrop-blur-sm rounded-full text-[10px] font-medium text-[#6341F2] uppercase tracking-wide border border-[#6341F2]/30">
-                  {category}
-                </span>
-              )}
+            <div className="flex items-center gap-1 text-white/70">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <p className="text-xs truncate min-w-0">{location}</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-1">
             <div className="flex items-center gap-1 text-white/60">
-              <Eye className="h-3 w-3" />
-              <span className="text-[10px] font-medium">View in 3D</span>
+              <Eye className="h-3 w-3 flex-shrink-0" />
+              <span className="text-[10px] font-medium whitespace-nowrap">View in 3D</span>
             </div>
             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="h-6 w-6 rounded-full bg-[#6341F2]/30 backdrop-blur-sm flex items-center justify-center border border-[#6341F2]/30">
