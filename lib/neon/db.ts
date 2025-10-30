@@ -3,8 +3,18 @@ import { neon } from "@neondatabase/serverless"
 const databaseUrl = process.env.NEON_POSTGRES_URL || process.env.NEON_NEON_DATABASE_URL
 
 if (!databaseUrl) {
-  throw new Error("NEON_POSTGRES_URL is not set. Please check your Neon integration in the Connect section.")
+  console.error("[v0] Available Neon env vars:", {
+    NEON_POSTGRES_URL: !!process.env.NEON_POSTGRES_URL,
+    NEON_DATABASE_URL: !!process.env.NEON_DATABASE_URL,
+    NEON_POSTGRES_PRISMA_URL: !!process.env.NEON_POSTGRES_PRISMA_URL,
+  })
+  throw new Error(
+    "Neon database URL is not set. Please check your Neon integration in the Connect section. " +
+      "Expected NEON_POSTGRES_URL or NEON_DATABASE_URL environment variable.",
+  )
 }
+
+console.log("[v0] Connecting to Neon database:", databaseUrl.substring(0, 30) + "...")
 
 const sql = neon(databaseUrl)
 

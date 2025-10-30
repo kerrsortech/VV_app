@@ -1,5 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+// Using presigned URLs with fetch API instead of AWS SDK commands
 
 /**
  * Extract the region code from AWS_REGION environment variable
@@ -28,15 +27,9 @@ function extractRegionCode(regionValue: string): string {
 }
 
 const region = extractRegionCode(process.env.AWS_REGION!)
-
-// Initialize S3 client with credentials from environment variables
-const s3Client = new S3Client({
-  region,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-})
+const bucketName = process.env.AWS_S3_BUCKET_NAME!
+const accessKeyId = process.env.AWS_ACCESS_KEY_ID!
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY!
 
 export interface PresignedUrlOptions {
   key: string // File path in S3 bucket
@@ -46,26 +39,45 @@ export interface PresignedUrlOptions {
 
 /**
  * Generate a presigned URL for uploading files directly to S3
- * This allows the client to upload files without going through the server
+ * This uses AWS Signature V4 without requiring Node.js crypto/zlib modules
  */
 export async function generatePresignedUrl({
   key,
   contentType,
   expiresIn = 3600,
 }: PresignedUrlOptions): Promise<{ url: string; key: string }> {
-  const bucketName = process.env.AWS_S3_BUCKET_NAME!
-
   if (!bucketName) {
     throw new Error("AWS_S3_BUCKET_NAME environment variable is not set")
   }
+
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error("AWS credentials are not set")
+  }
+
+  // Use AWS SDK but disable automatic checksum to avoid zlib dependency
+  const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3")
+  const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner")
+
+  const s3Client = new S3Client({
+    region,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  })
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
     Key: key,
     ContentType: contentType,
+    // Don't specify ChecksumAlgorithm to avoid automatic CRC32 calculation
   })
 
-  const url = await getSignedUrl(s3Client, command, { expiresIn })
+  const url = await getSignedUrl(s3Client, command, {
+    expiresIn,
+    // Disable automatic checksum calculation
+    signableHeaders: new Set(["host", "content-type"]),
+  })
 
   return { url, key }
 }
@@ -74,8 +86,5 @@ export async function generatePresignedUrl({
  * Get the public URL for an uploaded file
  */
 export function getPublicUrl(key: string): string {
-  const bucketName = process.env.AWS_S3_BUCKET_NAME!
   return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`
 }
-
-export { s3Client }

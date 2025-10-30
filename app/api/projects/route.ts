@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     if (search) {
       const searchPattern = `%${search}%`
       projects = await sql`
-        SELECT * FROM public.projects 
+        SELECT * FROM projects 
         WHERE is_published = true 
         AND (
           title ILIKE ${searchPattern} OR 
@@ -25,13 +25,13 @@ export async function GET(request: Request) {
       `
     } else if (category && category !== "all") {
       projects = await sql`
-        SELECT * FROM public.projects 
+        SELECT * FROM projects 
         WHERE is_published = true AND category = ${category}
         ORDER BY created_at DESC
       `
     } else {
       projects = await sql`
-        SELECT * FROM public.projects 
+        SELECT * FROM projects 
         WHERE is_published = true
         ORDER BY created_at DESC
       `
@@ -41,6 +41,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ projects: projects || [] })
   } catch (error) {
     console.error("[v0] Error in GET /api/projects:", error)
+    console.error("[v0] Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return NextResponse.json(
       {
         projects: [],
@@ -59,7 +63,7 @@ export async function POST(request: Request) {
 
     // Insert new project into Neon database
     const result = await sql`
-      INSERT INTO public.projects (
+      INSERT INTO projects (
         title, description, location, address, category,
         latitude, longitude, thumbnail_url, hero_image_url, model_url,
         rating, review_count, online_visitors, total_visitors, virtual_tours,
@@ -73,9 +77,20 @@ export async function POST(request: Request) {
       RETURNING *
     `
 
+    console.log("[v0] Created project:", result[0]?.id)
     return NextResponse.json({ project: result[0] }, { status: 201 })
   } catch (error) {
     console.error("[v0] Error in POST /api/projects:", error)
-    return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
+    console.error("[v0] Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json(
+      {
+        error: "Failed to create project",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
   }
 }
