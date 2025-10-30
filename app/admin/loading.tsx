@@ -1,9 +1,11 @@
+import { Spinner } from "@/components/ui/spinner"
+
 export default function AdminLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-purple-950/20 to-black flex items-center justify-center">
-      <div className="text-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent"></div>
-        <p className="mt-4 text-white/60">Loading admin panel...</p>
+    <div className="min-h-screen bg-gradient-to-b from-black via-purple-950/20 to-black flex items-center justify-center animate-in fade-in duration-300">
+      <div className="text-center space-y-4">
+        <Spinner className="size-8 text-purple-400 mx-auto" />
+        <p className="text-white/60 text-sm animate-pulse [animation-duration:2s]">Loading admin panel...</p>
       </div>
     </div>
   )
