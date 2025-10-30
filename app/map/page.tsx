@@ -11,52 +11,65 @@ import { InteractiveMap } from "@/components/interactive-map"
 
 const Search = LucideIcons.Search
 const ArrowLeft = LucideIcons.ArrowLeft
+const Loader2 = LucideIcons.Loader2
 
-const destinations = [
-  {
-    id: "1",
-    name: "Yoga Nandeeshwara Swamy Kalyani",
-    location: "Karnataka",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MacBook%20Pro%2014_%20-%206-DdM2VdX7LE7fyBXsXEh7d1euBp8ZlU.png",
-    lat: 13.3733,
-    lng: 77.6833,
-  },
-  {
-    id: "2",
-    name: "Yoga Nandeeshwara Swamy Kalyani",
-    location: "Karnataka",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MacBook%20Pro%2014_%20-%206-DdM2VdX7LE7fyBXsXEh7d1euBp8ZlU.png",
-    lat: 12.9716,
-    lng: 77.5946,
-  },
-  {
-    id: "3",
-    name: "Yoga Nandeeshwara Swamy Kalyani",
-    location: "Karnataka",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MacBook%20Pro%2014_%20-%206-DdM2VdX7LE7fyBXsXEh7d1euBp8ZlU.png",
-    lat: 15.3647,
-    lng: 75.124,
-  },
-  {
-    id: "4",
-    name: "Yoga Nandeeshwara Swamy Kalyani",
-    location: "Karnataka",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MacBook%20Pro%2014_%20-%206-DdM2VdX7LE7fyBXsXEh7d1euBp8ZlU.png",
-    lat: 14.4426,
-    lng: 76.0108,
-  },
-]
+interface Project {
+  id: string
+  title: string
+  location: string
+  thumbnail_url: string
+  latitude: number
+  longitude: number
+}
 
 export default function MapPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        console.log("[v0] Fetching projects from API...")
+        const response = await fetch("/api/projects")
+
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log("[v0] Projects fetched:", data)
+
+        // Handle both response formats
+        const projectsList = data.projects || []
+
+        // Filter projects that have coordinates
+        const projectsWithCoords = projectsList.filter((p: Project) => p.latitude && p.longitude)
+
+        setProjects(projectsWithCoords)
+        setError(null)
+      } catch (err) {
+        console.error("[v0] Error fetching projects:", err)
+        setError(err instanceof Error ? err.message : "Failed to load projects")
+        setProjects([]) // Set empty array on error
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProjects()
     window.scrollTo({ top: 0, behavior: "instant" })
   }, [])
+
+  const destinations = projects.map((project) => ({
+    id: project.id,
+    name: project.title,
+    location: project.location,
+    image: project.thumbnail_url,
+    lat: project.latitude,
+    lng: project.longitude,
+  }))
 
   return (
     <div className="min-h-screen bg-black animate-in fade-in duration-500">
@@ -92,31 +105,54 @@ export default function MapPage() {
                 <SelectItem value="monuments">Monuments</SelectItem>
               </SelectContent>
             </Select>
-            <Button className="h-10 bg-purple-600 hover:bg-purple-700 text-white px-5 text-sm font-medium">
-              Search
-            </Button>
+            <Button className="h-10 bg-[#6341F2] hover:bg-[#5835d9] text-white px-5 text-sm font-medium">Search</Button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            {/* List View - Takes 4 columns on large screens */}
-            <div className="lg:col-span-4 space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scrollbar-thin">
-              {destinations.map((destination, index) => (
-                <div
-                  key={destination.id}
-                  onClick={() => setSelectedId(destination.id)}
-                  className="cursor-pointer animate-in fade-in slide-in-from-left duration-300"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <DestinationCard {...destination} isSelected={selectedId === destination.id} compact />
-                </div>
-              ))}
+          {loading ? (
+            <div className="flex items-center justify-center h-[500px]">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#6341F2] mx-auto mb-2" />
+                <p className="text-white/60">Loading projects...</p>
+              </div>
             </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-[500px]">
+              <div className="text-center">
+                <p className="text-red-400 mb-2">Error loading projects</p>
+                <p className="text-white/60 text-sm">{error}</p>
+              </div>
+            </div>
+          ) : destinations.length === 0 ? (
+            <div className="flex items-center justify-center h-[500px]">
+              <div className="text-center">
+                <p className="text-white/60">No projects found</p>
+                <Link href="/admin">
+                  <Button className="mt-4 bg-[#6341F2] hover:bg-[#5835d9]">Create First Project</Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+              {/* List View - Takes 4 columns on large screens */}
+              <div className="lg:col-span-4 space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scrollbar-thin">
+                {destinations.map((destination, index) => (
+                  <div
+                    key={destination.id}
+                    onClick={() => setSelectedId(destination.id)}
+                    className="cursor-pointer animate-in fade-in slide-in-from-left duration-300"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <DestinationCard {...destination} isSelected={selectedId === destination.id} compact />
+                  </div>
+                ))}
+              </div>
 
-            {/* Map View - Takes 8 columns on large screens */}
-            <div className="lg:col-span-8 relative h-[500px] lg:h-[calc(100vh-200px)] overflow-hidden rounded-xl bg-white/5 backdrop-blur-md border border-white/10 animate-in fade-in slide-in-from-right duration-500">
-              <InteractiveMap destinations={destinations} selectedId={selectedId} onMarkerClick={setSelectedId} />
+              {/* Map View - Takes 8 columns on large screens */}
+              <div className="lg:col-span-8 relative h-[500px] lg:h-[calc(100vh-200px)] overflow-hidden rounded-xl bg-white/5 backdrop-blur-md border border-white/10 animate-in fade-in slide-in-from-right duration-500">
+                <InteractiveMap destinations={destinations} selectedId={selectedId} onMarkerClick={setSelectedId} />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

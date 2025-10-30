@@ -13,7 +13,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { upload } from "@vercel/blob/client"
 
 const ArrowLeft = LucideIcons.ArrowLeft
 const MapPin = LucideIcons.MapPin
@@ -177,13 +176,36 @@ export default function AdminPage() {
     try {
       console.log("[v0] Uploading thumbnail:", file.name, file.size, "bytes")
 
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
+      const presignResponse = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+        }),
       })
 
-      console.log("[v0] Thumbnail uploaded:", blob.url)
-      handleInputChange("thumbnail_url", blob.url)
+      if (!presignResponse.ok) {
+        throw new Error("Failed to get upload URL")
+      }
+
+      const { uploadUrl, key } = await presignResponse.json()
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload file to S3")
+      }
+
+      const publicUrlResponse = await fetch(`/api/upload?key=${encodeURIComponent(key)}`)
+      const { url } = await publicUrlResponse.json()
+
+      console.log("[v0] Thumbnail uploaded:", url)
+      handleInputChange("thumbnail_url", url)
       toast({
         title: "Success",
         description: "Thumbnail uploaded successfully",
@@ -208,13 +230,36 @@ export default function AdminPage() {
     try {
       console.log("[v0] Uploading hero image:", file.name, file.size, "bytes")
 
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
+      const presignResponse = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+        }),
       })
 
-      console.log("[v0] Hero image uploaded:", blob.url)
-      handleInputChange("hero_image_url", blob.url)
+      if (!presignResponse.ok) {
+        throw new Error("Failed to get upload URL")
+      }
+
+      const { uploadUrl, key } = await presignResponse.json()
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload file to S3")
+      }
+
+      const publicUrlResponse = await fetch(`/api/upload?key=${encodeURIComponent(key)}`)
+      const { url } = await publicUrlResponse.json()
+
+      console.log("[v0] Hero image uploaded:", url)
+      handleInputChange("hero_image_url", url)
       toast({
         title: "Success",
         description: "Hero image uploaded successfully",
@@ -235,18 +280,49 @@ export default function AdminPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Check file size and warn user
+    if (file.size > 4.5 * 1024 * 1024) {
+      toast({
+        title: "Large File Warning",
+        description: "Files over 4.5MB may fail to upload. Consider compressing your 3D model.",
+        variant: "destructive",
+      })
+    }
+
     setUploadingModel(true)
     try {
       console.log("[v0] Uploading 3D model:", file.name, file.size, "bytes")
 
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-        multipart: file.size > 100 * 1024 * 1024, // Enable multipart for files >100MB
+      const presignResponse = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+        }),
       })
 
-      console.log("[v0] 3D model uploaded:", blob.url)
-      handleInputChange("model_url", blob.url)
+      if (!presignResponse.ok) {
+        throw new Error("Failed to get upload URL")
+      }
+
+      const { uploadUrl, key } = await presignResponse.json()
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: file,
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload file to S3")
+      }
+
+      const publicUrlResponse = await fetch(`/api/upload?key=${encodeURIComponent(key)}`)
+      const { url } = await publicUrlResponse.json()
+
+      console.log("[v0] 3D model uploaded:", url)
+      handleInputChange("model_url", url)
       toast({
         title: "Success",
         description: "3D model uploaded successfully",
@@ -255,7 +331,8 @@ export default function AdminPage() {
       console.error("[v0] Error uploading 3D model:", error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to upload 3D model",
+        description:
+          error instanceof Error ? error.message : "Failed to upload 3D model. File may be too large (max 4.5MB).",
         variant: "destructive",
       })
     } finally {
