@@ -31,9 +31,8 @@ export function DestinationCard({
         isSelected && "border-[#6341F2]/60 ring-2 ring-[#6341F2]/40 bg-black/90",
       )}
     >
-      <div className="flex gap-3 p-2.5">
-        {/* Thumbnail */}
-        <div className="relative w-24 h-20 flex-shrink-0 overflow-hidden rounded-md">
+      <div className="flex gap-4 p-3">
+        <div className="relative w-32 h-32 flex-shrink-0 overflow-hidden rounded-lg">
           <img
             src={image || "/placeholder.svg"}
             alt={name}
@@ -41,9 +40,8 @@ export function DestinationCard({
           />
         </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-          <div className="space-y-1">
+        <div className="flex-1 min-w-0 flex flex-col justify-between h-32 py-1">
+          <div className="space-y-1.5">
             {category && (
               <span className="inline-block px-2 py-0.5 bg-white/10 backdrop-blur-sm rounded-full text-[10px] font-medium text-white/90 uppercase tracking-wide border border-white/20">
                 {category}
@@ -52,20 +50,20 @@ export function DestinationCard({
             <h3 className="font-semibold text-white text-sm leading-tight line-clamp-2 group-hover:text-[#6341F2] transition-colors">
               {name}
             </h3>
-            <div className="flex items-center gap-1 text-white/70">
-              <MapPin className="h-3 w-3 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 text-white/70">
+              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
               <p className="text-xs truncate min-w-0">{location}</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between mt-1">
-            <div className="flex items-center gap-1 text-white/60">
-              <Eye className="h-3 w-3 flex-shrink-0" />
-              <span className="text-[10px] font-medium whitespace-nowrap">View in 3D</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-white/60">
+              <Eye className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="text-[11px] font-medium whitespace-nowrap">View in 3D</span>
             </div>
             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="h-6 w-6 rounded-full bg-[#6341F2]/30 backdrop-blur-sm flex items-center justify-center border border-[#6341F2]/30">
-                <LucideIcons.ArrowRight className="h-3 w-3 text-[#6341F2]" />
+              <div className="h-7 w-7 rounded-full bg-[#6341F2]/30 backdrop-blur-sm flex items-center justify-center border border-[#6341F2]/30">
+                <LucideIcons.ArrowRight className="h-3.5 w-3.5 text-[#6341F2]" />
               </div>
             </div>
           </div>
