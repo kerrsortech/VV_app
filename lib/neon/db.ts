@@ -6,7 +6,7 @@ function getSql(): NeonQueryFunction<false, false> {
   if (_sql) return _sql
 
   const databaseUrl =
-    process.env.NEON_NEON_DATABASE_URL ||
+    process.env.NEON_DATABASE_URL ||
     process.env.NEON_POSTGRES_URL ||
     process.env.DATABASE_URL ||
     process.env.NEON_POSTGRES_PRISMA_URL

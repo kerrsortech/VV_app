@@ -49,6 +49,9 @@ export default function AdminPage() {
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
   const [uploadingHero, setUploadingHero] = useState(false)
   const [uploadingModel, setUploadingModel] = useState(false)
+  const [activeTab, setActiveTab] = useState<"new" | "yours">("new")
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
+  const [yourProjects, setYourProjects] = useState<any[]>([])
 
   const [formData, setFormData] = useState({
     title: "",
@@ -76,6 +79,20 @@ export default function AdminPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" })
   }, [])
+
+  // Load user's projects when switching to "Your Projects"
+  useEffect(() => {
+    if (activeTab !== "yours") return
+    ;(async () => {
+      try {
+        const res = await fetch("/api/projects")
+        const data = await res.json()
+        setYourProjects(data.projects || [])
+      } catch (error) {
+        console.error("[v0] Failed to load projects:", error)
+      }
+    })()
+  }, [activeTab])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -114,8 +131,11 @@ export default function AdminPage() {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch("/api/projects", {
-        method: "POST",
+      const isEditing = !!editingProjectId
+      const endpoint = isEditing ? `/api/projects/${editingProjectId}` : "/api/projects"
+      const method = isEditing ? "PUT" : "POST"
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -151,20 +171,69 @@ export default function AdminPage() {
       const { project } = await response.json()
 
       toast({
-        title: "Success!",
-        description: "Project created successfully",
+        title: isEditing ? "Updated!" : "Success!",
+        description: isEditing ? "Project updated successfully" : "Project created successfully",
       })
 
-      router.push(`/destination/${project.id}`)
+      if (!isEditing) {
+        router.push(`/destination/${project.id}`)
+      } else {
+        // Reset editing state after update
+        setEditingProjectId(null)
+        setActiveTab("yours")
+      }
     } catch (error) {
       console.error("[v0] Error creating project:", error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create project. Please try again.",
+        description:
+          error instanceof Error ? error.message : "Failed to save project. Please try again.",
         variant: "destructive",
       })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleEditProject = (project: any) => {
+    setEditingProjectId(project.id)
+    setActiveTab("new")
+    setFormData({
+      title: project.title || "",
+      location: project.location || "",
+      address: project.address || "",
+      description: project.description || "",
+      latitude: String(project.latitude ?? ""),
+      longitude: String(project.longitude ?? ""),
+      category: project.category || "",
+      rating: String(project.rating ?? "0"),
+      review_count: String(project.review_count ?? "0"),
+      online_visitors: String(project.online_visitors ?? "0"),
+      total_visitors: String(project.total_visitors ?? "0"),
+      virtual_tours: String(project.virtual_tours ?? "0"),
+      thumbnail_url: project.thumbnail_url || "",
+      hero_image_url: project.hero_image_url || "",
+      model_url: project.model_url || "",
+    })
+    setHighlights(Array.isArray(project.highlights) ? project.highlights : [])
+    setVisitorTips(Array.isArray(project.visitor_tips) ? project.visitor_tips : [])
+    setMarketplaceLinks(Array.isArray(project.marketplace_links) ? project.marketplace_links : [])
+    setBadges(Array.isArray(project.badges) ? project.badges : [])
+  }
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to delete project")
+      setYourProjects((prev) => prev.filter((p) => p.id !== projectId))
+      toast({ title: "Deleted", description: "Project removed successfully" })
+    } catch (error) {
+      console.error("[v0] Delete failed:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete project",
+        variant: "destructive",
+      })
     }
   }
 
@@ -361,15 +430,33 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Form Card */}
-        <Card className="border-white/10 bg-black/60 backdrop-blur-xl">
-          <CardHeader className="border-b border-white/10">
-            <CardTitle className="text-white text-xl">Add New Project</CardTitle>
-            <CardDescription className="text-white/60">
-              Fill in the details to create a new virtual tourism experience
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
+        {/* Tabs Header */}
+        <div className="mb-4 flex items-center gap-2">
+          <Button
+            variant={activeTab === "new" ? "default" : "outline"}
+            className={activeTab === "new" ? "bg-purple-600 hover:bg-purple-700 text-white" : "border-white/10 text-white"}
+            onClick={() => setActiveTab("new")}
+          >
+            {editingProjectId ? "Edit Project" : "Add New Project"}
+          </Button>
+          <Button
+            variant={activeTab === "yours" ? "default" : "outline"}
+            className={activeTab === "yours" ? "bg-purple-600 hover:bg-purple-700 text-white" : "border-white/10 text-white"}
+            onClick={() => setActiveTab("yours")}
+          >
+            Your Projects
+          </Button>
+        </div>
+
+        {activeTab === "new" ? (
+          <Card className="border-white/10 bg-black/60 backdrop-blur-xl">
+            <CardHeader className="border-b border-white/10">
+              <CardTitle className="text-white text-xl">{editingProjectId ? "Edit Project" : "Add New Project"}</CardTitle>
+              <CardDescription className="text-white/60">
+                {editingProjectId ? "Update your virtual tourism experience" : "Fill in the details to create a new virtual tourism experience"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Basic Information Section */}
               <div className="space-y-4">
@@ -914,12 +1001,46 @@ export default function AdminPage() {
                   }
                 >
                   <Save className="mr-2 h-4 w-4" />
-                  {isSubmitting ? "Creating..." : "Create Project"}
+                  {isSubmitting ? (editingProjectId ? "Updating..." : "Creating...") : editingProjectId ? "Update Project" : "Create Project"}
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-white/10 bg-black/60 backdrop-blur-xl">
+            <CardHeader className="border-b border-white/10">
+              <CardTitle className="text-white text-xl">Your Projects</CardTitle>
+              <CardDescription className="text-white/60">Manage your created projects</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {yourProjects.length === 0 ? (
+                <p className="text-white/60 text-sm">No projects yet. Create one in the Add New Project tab.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {yourProjects.map((p) => (
+                    <div key={p.id} className="border border-white/10 rounded-lg overflow-hidden bg-white/5">
+                      <div className="aspect-video w-full bg-white/5">
+                        <img src={p.thumbnail_url || "/placeholder.jpg"} alt={p.title} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="p-4 flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-white font-semibold">{p.title}</h3>
+                          <p className="text-white/60 text-sm">{p.location}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => handleEditProject(p)}>Edit</Button>
+                          <Button size="sm" variant="outline" className="border-red-400 text-red-300 hover:bg-red-500/10" onClick={() => handleDeleteProject(p.id)}>Delete</Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                }
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

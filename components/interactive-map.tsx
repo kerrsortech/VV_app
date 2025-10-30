@@ -36,6 +36,12 @@ export function InteractiveMap({ destinations, selectedId, onMarkerClick }: Inte
         const LeafletNS: any = (LeafletModule as any)?.default ?? (LeafletModule as any)
         setL(LeafletNS)
 
+        // Prevent double-initialization on the same DOM element (Fast Refresh / re-mounts)
+        if ((mapRef.current as any)?._leaflet_id) {
+          console.warn("[v0] Map container already initialized; skipping re-init")
+          return
+        }
+
         // Initialize map centered on Karnataka, India
         mapInstance = LeafletNS.map(mapRef.current!, {
           center: [14.5, 76.0],
@@ -65,6 +71,18 @@ export function InteractiveMap({ destinations, selectedId, onMarkerClick }: Inte
           .addTo(mapInstance)
 
         setMap(mapInstance)
+        // Ensure proper sizing after mount and on window resize
+        setTimeout(() => {
+          try {
+            mapInstance.invalidateSize()
+          } catch {}
+        }, 0)
+        const onResize = () => {
+          try {
+            mapInstance.invalidateSize()
+          } catch {}
+        }
+        window.addEventListener("resize", onResize)
         initializedRef.current = true
 
         console.log("[v0] Map initialized successfully")
@@ -81,6 +99,19 @@ export function InteractiveMap({ destinations, selectedId, onMarkerClick }: Inte
           console.log("[v0] Map cleaned up")
         } catch (error) {
           console.warn("[v0] Error cleaning up map:", error)
+        }
+        try {
+          window.removeEventListener("resize", () => {
+            try {
+              mapInstance.invalidateSize()
+            } catch {}
+          })
+        } catch {}
+        // Clear internal Leaflet marker on the DOM node so future mounts can initialize
+        if ((mapRef.current as any)?._leaflet_id) {
+          try {
+            ;(mapRef.current as any)._leaflet_id = undefined
+          } catch {}
         }
       }
       initializedRef.current = false
@@ -164,8 +195,10 @@ export function InteractiveMap({ destinations, selectedId, onMarkerClick }: Inte
     markersRef.current.forEach((marker, index) => {
       const dest = destinations[index]
       if (dest && dest.id === selectedId) {
-        marker.openPopup()
-        map.setView([dest.lat, dest.lng], 10, { animate: true })
+        try {
+          marker.openPopup()
+          map.setView([dest.lat, dest.lng], 10, { animate: true })
+        } catch {}
       }
     })
   }, [selectedId, map, destinations])

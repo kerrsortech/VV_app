@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  // Pin Turbopack root to this project to avoid picking other lockfiles
+  turbopack: {
+    root: '.',
   },
   typescript: {
     ignoreBuildErrors: true,

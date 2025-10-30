@@ -4,7 +4,7 @@ export async function GET() {
   try {
     // Check environment variables
     const envVars = {
-      NEON_NEON_DATABASE_URL: !!process.env.NEON_DATABASE_URL,
+      NEON_DATABASE_URL: !!process.env.NEON_DATABASE_URL,
       NEON_POSTGRES_URL: !!process.env.NEON_POSTGRES_URL,
       NEON_POSTGRES_PRISMA_URL: !!process.env.NEON_POSTGRES_PRISMA_URL,
       DATABASE_URL: !!process.env.DATABASE_URL,
