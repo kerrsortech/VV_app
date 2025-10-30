@@ -42,7 +42,7 @@ export function DestinationCard({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between h-20">
+        <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
           <div className="space-y-1">
             {category && (
               <span className="inline-block px-2 py-0.5 bg-white/10 backdrop-blur-sm rounded-full text-[10px] font-medium text-white/90 uppercase tracking-wide border border-white/20">
@@ -58,7 +58,7 @@ export function DestinationCard({
             </div>
           </div>
 
-          <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 text-white/60">
               <Eye className="h-3 w-3 flex-shrink-0" />
               <span className="text-[10px] font-medium whitespace-nowrap">View in 3D</span>
