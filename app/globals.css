@@ -151,7 +151,6 @@
 }
 
 /* Improved Leaflet map styles and fixed z-index issues */
-@import "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
 
 /* Ensure Leaflet map container has proper sizing */
 .leaflet-container {

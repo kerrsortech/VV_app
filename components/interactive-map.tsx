@@ -22,19 +22,22 @@ export function InteractiveMap({ destinations, selectedId, onMarkerClick }: Inte
   const [map, setMap] = useState<any>(null)
   const [L, setL] = useState<any>(null)
   const markersRef = useRef<any[]>([])
+  const initializedRef = useRef<boolean>(false)
 
   useEffect(() => {
     if (typeof window === "undefined" || !mapRef.current) return
+    if (initializedRef.current) return
 
     let mapInstance: any = null
 
     // Dynamically import Leaflet to avoid SSR issues
     import("leaflet")
       .then((LeafletModule) => {
-        setL(LeafletModule.default)
+        const LeafletNS: any = (LeafletModule as any)?.default ?? (LeafletModule as any)
+        setL(LeafletNS)
 
         // Initialize map centered on Karnataka, India
-        mapInstance = LeafletModule.default.map(mapRef.current!, {
+        mapInstance = LeafletNS.map(mapRef.current!, {
           center: [14.5, 76.0],
           zoom: 7,
           zoomControl: false,
@@ -48,20 +51,21 @@ export function InteractiveMap({ destinations, selectedId, onMarkerClick }: Inte
         })
 
         // Add OpenStreetMap tiles (free, no API key needed)
-        LeafletModule.default
+        LeafletNS
           .tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19,
             minZoom: 3,
           })
           .addTo(mapInstance)
 
-        LeafletModule.default.control
+        LeafletNS.control
           .zoom({
             position: "bottomright",
           })
           .addTo(mapInstance)
 
         setMap(mapInstance)
+        initializedRef.current = true
 
         console.log("[v0] Map initialized successfully")
       })
@@ -79,6 +83,7 @@ export function InteractiveMap({ destinations, selectedId, onMarkerClick }: Inte
           console.warn("[v0] Error cleaning up map:", error)
         }
       }
+      initializedRef.current = false
     }
   }, [])
 
