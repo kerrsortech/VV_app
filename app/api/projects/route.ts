@@ -55,13 +55,7 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient()
 
-    // Check if user is authenticated
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    // No auth required - anyone can create projects for now
 
     const body = await request.json()
 

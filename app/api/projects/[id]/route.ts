@@ -2,9 +2,9 @@ import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 // GET single project by ID
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = params
     const supabase = await createClient()
 
     const { data, error } = await supabase.from("projects").select("*").eq("id", id).eq("is_published", true).single()
@@ -22,18 +22,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 }
 
 // PUT update project
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = params
     const supabase = await createClient()
-
-    // Check if user is authenticated
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
 
     const body = await request.json()
 
@@ -52,18 +44,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 // DELETE project
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = params
     const supabase = await createClient()
-
-    // Check if user is authenticated
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
 
     const { error } = await supabase.from("projects").delete().eq("id", id)
 
